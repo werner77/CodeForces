@@ -45,4 +45,8 @@ private fun readDoubleArray(n: Int = 0) =
     if (n == 0) readList().run { DoubleArray(size) { get(it).toDouble() } } else DoubleArray(n) { readDouble() }
 
 fun main() {
+    repeat(readInt()) {
+        // TODO: Implement
+    }
+    out.flush()
 }
