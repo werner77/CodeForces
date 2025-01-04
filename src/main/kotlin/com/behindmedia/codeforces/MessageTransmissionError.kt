@@ -1,6 +1,5 @@
 import java.io.PrintWriter
 import java.util.StringTokenizer
-import kotlin.math.*
 
 private val DEBUG = System.getProperty("ONLINE_JUDGE") == null
 private val INPUT = System.`in`
@@ -44,23 +43,38 @@ private fun readDoubleArray(n: Int = 0) =
 
 fun main() {
     val word = readLn()
+    val base = 37L  // A prime number as the base for hashing
+    val mod = 1L.shl(61) - 1L  // A large prime modulus to prevent overflow
+    var startHash = 0L
+    var endHash = 0L
+    var power = 1L
+    val startHashes = LongArray(word.length)
+    val endHashes = LongArray(word.length)
+    for (i in word.indices) {
+        val j = word.length - 1 - i
+        // Update the hash for the prefix (startHash)
+        startHash = (startHash * base + word[i].code) % mod
+
+        // Update the hash for the suffix (endHash)
+        endHash = (endHash + word[j].code * power) % mod
+
+        // Update power for the next character in the suffix
+        power = (power * base) % mod
+
+        startHashes[j] = startHash
+        endHashes[j] = endHash
+    }
     var found = false
     val maxLength = if (word.length % 2 == 0) word.length / 2 else word.length / 2 + 1
     for (k in 1 until maxLength) {
-        var valid = true
-        var j = k
-        while (j < word.length) {
-            if (word[j] != word[j - k]) {
-                valid = false
+        if (startHashes[k] == endHashes[k]) {
+            val foundWord = word.substring(k)
+            if (foundWord == word.substring(0, word.length - k)) {
+                out.println("YES")
+                out.println(word.substring(k))
+                found = true
                 break
             }
-            j++
-        }
-        if (valid) {
-            out.println("YES")
-            out.println(word.substring(k))
-            found = true
-            break
         }
     }
     if (!found) out.println("NO")
