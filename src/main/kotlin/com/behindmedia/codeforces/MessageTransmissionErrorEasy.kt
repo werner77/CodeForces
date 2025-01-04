@@ -43,8 +43,17 @@ private fun readDoubleArray(n: Int = 0) =
     if (n == 0) readList().run { DoubleArray(size) { get(it).toDouble() } } else DoubleArray(n) { readDouble() }
 
 fun main() {
-    repeat(readInt()) {
-        // TODO: Implement
+    val word = readLn()
+    var found = false
+    for (i in word.length - 1 downTo 1) {
+        val start = word.substring(0, i)
+        if (word.endsWith(start) && start.length * 2 > word.length) {
+            out.println("YES")
+            out.println(start)
+            found = true
+            break
+        }
     }
+    if (!found) out.println("NO")
     out.flush()
 }

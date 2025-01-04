@@ -44,7 +44,17 @@ private fun readDoubleArray(n: Int = 0) =
 
 fun main() {
     repeat(readInt()) {
-        // TODO: Implement
+        val n = readInt()
+        val ints = readIntArray(n)
+        var sum = 0
+        for ((i, j) in ints.withIndex()) {
+            if (i % 2== 0) {
+                sum += j
+            } else {
+                sum -= j
+            }
+        }
+        out.println(sum)
     }
     out.flush()
 }
