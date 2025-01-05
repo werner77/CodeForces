@@ -197,9 +197,83 @@ private fun IntArray.count(value: Int, comparisonResult: Int, range: IntRange = 
     return count(size = this.size, value = value, comparisonResult = comparisonResult, range = range) { this[it] }
 }
 
-fun main() {
-    repeat(readInt()) {
-        // TODO: Implement
+private fun findWeight(first: Array<IntRange>, second: Array<IntRange>): Int {
+    var weight = Int.MIN_VALUE
+    for (j in first.indices) {
+        val firstRange = first[j]
+        val secondRange = second[j]
+        weight = max(weight, 1 + firstRange.last - secondRange.first)
     }
+    return weight
+}
+
+private const val INF = 1_000_000_000
+
+fun main() {
+    val (n, q) = readIntList()
+    val moves = Array(q) {
+        read().toInt() to (read() == "+")
+    }
+    // One for each snake
+    val ranges = Array(n) {
+        // Range at each moment in time
+        Array(q + 1) {
+            1..1
+        }
+    }
+    val weights = Array(n) {
+        IntArray(n) {
+            0
+        }
+    }
+    for (snake in 1..n) {
+        val rangeArray = ranges[snake - 1]
+        for ((i, move) in moves.withIndex()) {
+            val (index, expand) = move
+            if (index == snake) {
+                rangeArray[i + 1] =
+                    if (expand) rangeArray[i].first..rangeArray[i].last + 1 else rangeArray[i].first + 1..rangeArray[i].last
+            } else {
+                // Range stays the same
+                rangeArray[i + 1] = rangeArray[i]
+            }
+        }
+    }
+
+    fun solve(): Int {
+        val all = (1 shl n) - 1
+        val dp = Array(all + 1) { IntArray(n) { Int.MAX_VALUE } }
+        for (i in 0 until n) {
+            dp[1 shl i][i] = 0
+        }
+        for (seen in 1 .. all) {
+            for (to in 0 until n) {
+                val maskTo = 1 shl to
+                if (maskTo > seen) break
+                if (seen and maskTo == 0) continue
+                for (from in 0 until n) {
+                    if (from == to) continue
+                    val maskFrom = 1 shl from
+                    if (maskFrom > seen) break
+                    if (seen and maskFrom == 0) continue
+                    val fromSeen = seen and maskTo.inv()
+                    val weight = weights[from][to]
+                    dp[seen][to] = minOf(dp[seen][to], weight + dp[fromSeen][from])
+                }
+            }
+        }
+        return dp[all].withIndex().minOf { (i, weight) -> weight + ranges[i][q].last }
+    }
+
+    for (i in 0 until n) {
+        for (j in 0 until n) {
+            if (i == j) continue
+            val first = ranges[i]
+            val second = ranges[j]
+            val offset = findWeight(first, second)
+            weights[i][j] = offset
+        }
+    }
+    out.println(solve())
     out.flush()
 }
