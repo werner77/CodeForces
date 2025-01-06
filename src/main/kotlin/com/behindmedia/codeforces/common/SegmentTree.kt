@@ -5,9 +5,8 @@ private interface SegmentNode<N : SegmentNode<N, V>, V : Any> {
     fun update(with: V)
 }
 
-private class SegmentTree<N : SegmentNode<N, V>, V : Any>(data: List<V>, nodeConstructor: () -> N) {
+private class SegmentTree<N : SegmentNode<N, V>, V : Any>(val size: Int, dataLocator: (Int) -> V, nodeConstructor: () -> N) {
 
-    val size: Int = data.size
     private val info: MutableList<N>
 
     private fun log2(value: Int): Int {
@@ -22,7 +21,7 @@ private class SegmentTree<N : SegmentNode<N, V>, V : Any>(data: List<V>, nodeCon
         }
         fun build(v: Int, l: Int, r: Int) {
             if (l == r) {
-                info[v].update(with = data[l])
+                info[v].update(with = dataLocator(l))
                 return
             }
             val m = (l + r) / 2
