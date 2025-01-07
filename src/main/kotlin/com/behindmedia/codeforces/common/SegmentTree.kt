@@ -2,90 +2,97 @@ package com.behindmedia.codeforces.common
 
 private interface SegmentNode<N : SegmentNode<N, V>, V : Any> {
     operator fun plus(other: N): N
-    fun update(with: V)
 }
 
-private class SegmentTree<N : SegmentNode<N, V>, V : Any>(val size: Int, dataLocator: (Int) -> V, nodeConstructor: () -> N) {
+private class SegmentTree<N : SegmentNode<N, V>, V : Any>(
+    val size: Int,
+    private val dataLocator: (Int) -> V,
+    private val nodeConstructor: (V) -> N
+) {
+    private val nodes: MutableList<N?>
 
-    private val info: MutableList<N>
+    val range: IntRange
+        get() = 0 until size
 
-    private fun log2(value: Int): Int {
+    private operator fun N?.plus(other: N?): N? {
+        return if (this == null) {
+            other
+        } else if (other == null) {
+            this
+        } else {
+            this + other
+        }
+    }
+
+    private fun ceilLog2(value: Int): Int {
         require(value > 0)
-        return 31 - value.countLeadingZeroBits()
+        return 32 - (value - 1).countLeadingZeroBits()
     }
 
     init {
-        val infoSize = if (size <= 1) 2 else 2 * (1 shl (log2(size - 1) + 1))
-        info = MutableList<N>(infoSize) {
-            nodeConstructor()
+        require(size >= 1)
+        val infoSize = 2 * (1 shl ceilLog2(size))
+        nodes = MutableList<N?>(infoSize) {
+            null
         }
-        fun build(v: Int, l: Int, r: Int) {
-            if (l == r) {
-                info[v].update(with = dataLocator(l))
+        fun build(nodeIndex: Int, left: Int, right: Int) {
+            if (left == right) {
+                nodes[nodeIndex] = nodeConstructor(dataLocator(left))
                 return
             }
-            val m = (l + r) / 2
-            build(v + v, l, m)
-            build(v + v + 1, m + 1, r)
-            info[v] = info[v + v] + info[v + v + 1]
+            val mid = (left + right) / 2
+            val nextNodeIndex = nodeIndex + nodeIndex
+            build(nextNodeIndex, left, mid)
+            build(nextNodeIndex + 1, mid + 1, right)
+            nodes[nodeIndex] = nodes[nextNodeIndex] + nodes[nextNodeIndex + 1]
         }
         build(1, 0, size - 1)
     }
 
-    private fun rangeQuery(v: Int, l: Int, r: Int, tl: Int, tr: Int): N? {
-        if (r < tl || l > tr) {
-            return null
-        }
-        if (l >= tl && r <= tr) {
-            return info[v]
-        }
-        val m = (l + r) / 2
-        val left = rangeQuery(v + v, l, m, tl, tr)
-        val right = rangeQuery(v + v + 1, m + 1, r, tl, tr)
-        return if (left == null) {
-            right
-        } else if (right == null) {
-            left
-        } else {
-            left + right
-        }
-    }
-
-    fun query(range: IntRange): N? {
-        return rangeQuery(1, 0, size - 1, range.first, range.last)
-    }
-
-    private fun modify(v: Int, l: Int, r: Int, i: Int, x: V) {
-        if (l == r) {
-            info[v].update(x)
-            return
-        }
-        val m = (l + r) / 2
-        if (i <= m) {
-            modify(v + v, l, m, i, x)
-        } else {
-            modify(v + v + 1, m + 1, r, i, x)
-        }
-        info[v] = info[v + v] + info[v + v + 1]
-    }
-
-    fun modify(index: Int, value: V) {
-        modify(1, 0, size - 1, index, value);
-    }
-
-    private fun query(v: Int, l: Int, r: Int, i: Int): N {
-        if (l == r) {
-            return info[v]
-        }
-        val m = (l + r) / 2
-        return if (i <= m) {
-            query(v + v, l, m, i)
-        } else {
-            query(v + v + 1, m + 1, r, i)
-        }
+    fun query(range: IntRange = this.range): N {
+        require(range.first in this.range && range.last in this.range) { "Invalid range: $range" }
+        return query(1, 0, size - 1, range.first, range.last) ?: error("No node found")
     }
 
     fun query(index: Int): N {
-        return query(1, 0, size - 1, index)
+        require(index in this.range) { "Invalid index: $index" }
+        return query(index..index)
+    }
+
+    fun update(index: Int, value: V) {
+        require(index in this.range) { "Invalid index: $index" }
+        update(1, 0, size - 1, index, value);
+    }
+
+    private fun query(nodeIndex: Int, left: Int, right: Int, queryLeft: Int, queryRight: Int): N? {
+        if (right < queryLeft || left > queryRight) {
+            return null
+        }
+        if (left >= queryLeft && right <= queryRight) {
+            return nodes[nodeIndex]
+        }
+        val m = (left + right) / 2
+        val nextNodeIndex = nodeIndex + nodeIndex
+        return query(nextNodeIndex, left, m, queryLeft, queryRight) + query(
+            nextNodeIndex + 1,
+            m + 1,
+            right,
+            queryLeft,
+            queryRight
+        )
+    }
+
+    private fun update(nodeIndex: Int, left: Int, right: Int, valueIndex: Int, value: V) {
+        if (left == right) {
+            nodes[nodeIndex] = nodeConstructor(value)
+            return
+        }
+        val mid = (left + right) / 2
+        if (valueIndex <= mid) {
+            update(nodeIndex + nodeIndex, left, mid, valueIndex, value)
+        } else {
+            update(nodeIndex + nodeIndex + 1, mid + 1, right, valueIndex, value)
+        }
+        nodes[nodeIndex] = nodes[nodeIndex + nodeIndex] + nodes[nodeIndex + nodeIndex + 1]
     }
 }

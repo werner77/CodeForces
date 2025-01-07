@@ -78,3 +78,13 @@ private val Long.numberOfDigits: Int
             else -> 19
         }
     }
+
+private fun floorLog2(value: Int): Int {
+    require(value > 0)
+    return 31 - value.countLeadingZeroBits()
+}
+
+private fun ceilLog2(value: Int): Int {
+    require(value > 0)
+    return 32 - (value - 1).countLeadingZeroBits()
+}
