@@ -32,27 +32,25 @@ private inline fun binarySearch(low: Int, high: Int, inverse: Boolean = false, p
     return best
 }
 
-private const val Less = 1
-private const val LessOrEqual = 2
-private const val GreaterOrEqual = 3
-private const val Greater = 4
+private enum class ComparisonResult {
+    Less, LessOrEqual, GreaterOrEqual, Greater
+}
 
 private inline fun <T : Comparable<T>> count(
     size: Int,
     value: T,
-    comparisonResult: Int,
+    comparisonResult: ComparisonResult,
     range: IntRange = 0 until size,
     valueForIndex: (Int) -> T
 ): Int {
-    val inverse = comparisonResult == Less || comparisonResult == LessOrEqual
+    val inverse = comparisonResult == ComparisonResult.Less || comparisonResult == ComparisonResult.LessOrEqual
     val index = binarySearch(low = range.first, high = range.last, inverse = inverse) {
         val valueAtIndex = valueForIndex(it)
         when (comparisonResult) {
-            Less -> valueAtIndex >= value
-            LessOrEqual -> valueAtIndex > value
-            GreaterOrEqual -> valueAtIndex < value
-            Greater -> valueAtIndex <= value
-            else -> error("Invalid comparison result")
+            ComparisonResult.Less -> valueAtIndex >= value
+            ComparisonResult.LessOrEqual -> valueAtIndex > value
+            ComparisonResult.GreaterOrEqual -> valueAtIndex < value
+            ComparisonResult.Greater -> valueAtIndex <= value
         }
     }
     return if (inverse) {
@@ -64,16 +62,16 @@ private inline fun <T : Comparable<T>> count(
 
 private fun <T : Comparable<T>> Array<T>.count(
     value: T,
-    comparisonResult: Int,
+    comparisonResult: ComparisonResult,
     range: IntRange = indices
 ): Int {
     return count(size = this.size, value = value, comparisonResult = comparisonResult, range = range) { this[it] }
 }
 
-private fun LongArray.count(value: Long, comparisonResult: Int, range: IntRange = indices): Int {
+private fun LongArray.count(value: Long, comparisonResult: ComparisonResult, range: IntRange = indices): Int {
     return count(size = this.size, value = value, comparisonResult = comparisonResult, range = range) { this[it] }
 }
 
-private fun IntArray.count(value: Int, comparisonResult: Int, range: IntRange = indices): Int {
+private fun IntArray.count(value: Int, comparisonResult: ComparisonResult, range: IntRange = indices): Int {
     return count(size = this.size, value = value, comparisonResult = comparisonResult, range = range) { this[it] }
 }
